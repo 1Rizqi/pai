@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulasi Ujian PAI Kelas XI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Nunito:wght@400;500;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sage: #7a9e7e; --sage-light: #a8c5ac; --sage-dark: #4f7a54;
+            --cream: #faf8f3; --cream-dark: #f0ece1;
+            --text-dark: #2d3436; --text-mid: #4a5568;
+        }
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: var(--cream);
+            color: var(--text-dark);
+        }
+        .font-arabic {
+            font-family: 'Amiri', serif;
+            direction: rtl;
+            line-height: 2.2;
+        }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .nav-btn.active {
+            background-color: var(--sage);
+            color: white;
+            border-color: var(--sage);
+        }
+        .nav-btn.answered {
+            background-color: var(--sage-light);
+            color: white;
+            border-color: var(--sage-light);
+        }
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        .option-btn.selected {
+            border-color: var(--sage);
+            background-color: #e8f5ea;
+        }
+        .option-btn.correct {
+            border-color: #48bb78 !important;
+            background-color: #f0fff4 !important;
+            color: #22543d;
+        }
+        .option-btn.wrong {
+            border-color: #f56565 !important;
+            background-color: #fff5f5 !important;
+            color: #742a2a;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--sage-light); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--sage); }
+
+        /* Drawer transition */
+        #sidebar-panel {
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-[#4f7a54] text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3 md:py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-lg md:text-2xl font-bold font-['Lora'] leading-tight">Simulasi PAI</h1>
+                <p class="text-[10px] md:text-sm text-green-100 hidden sm:block">Berdasarkan Kisi-kisi PAI Kelas XI</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div id="progress-text" class="text-xs md:text-sm font-semibold bg-white/20 px-3 py-1.5 rounded-full hidden sm:block">
+                    0/45 Selesai
+                </div>
+                <!-- Mobile Nav Toggle Button -->
+                <button id="btn-toggle-nav" class="lg:hidden flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
+                    ☰ <span class="hidden xs:inline">Navigasi</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-6xl mx-auto w-full p-4 flex flex-col lg:flex-row gap-6">
+        
+        <!-- Sidebar Navigation (Drawer on Mobile, Sticky on Desktop) -->
+        <aside id="mobile-nav-overlay" class="fixed inset-0 bg-black/60 z-50 hidden lg:static lg:block lg:bg-transparent lg:w-1/4">
+            <div id="sidebar-panel" class="absolute right-0 top-0 bottom-0 w-[85%] max-w-sm bg-white p-5 overflow-y-auto transform translate-x-full lg:translate-x-0 lg:static lg:w-full lg:max-w-none lg:rounded-2xl lg:shadow-sm lg:border lg:border-[#f0ece1] lg:h-fit lg:sticky lg:top-24">
+                
+                <div class="flex justify-between items-center mb-6 lg:hidden border-b pb-3">
+                    <div>
+                        <h2 class="font-bold text-gray-800 text-lg">Navigasi Soal</h2>
+                        <p id="progress-text-mobile" class="text-xs text-gray-500">0/45 Terjawab</p>
+                    </div>
+                    <button id="btn-close-nav" class="text-gray-500 hover:text-red-500 text-3xl leading-none">&times;</button>
+                </div>
+
+                <h2 class="font-bold text-gray-700 mb-4 border-b pb-2 hidden lg:block">Navigasi Soal</h2>
+                
+                <div class="mb-5">
+                    <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pilihan Ganda</h3>
+                    <div class="grid grid-cols-5 gap-1.5" id="nav-pg">
+                        <!-- Nav Buttons generated via JS -->
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Essay</h3>
+                    <div class="grid grid-cols-5 gap-1.5" id="nav-essay">
+                        <!-- Nav Buttons generated via JS -->
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-4 border-t border-gray-100">
+                    <button id="btn-submit-all" class="w-full bg-[#7a9e7e] hover:bg-[#4f7a54] text-white font-bold py-3 rounded-xl transition-colors shadow-md hidden">
+                        Kumpulkan Kuis
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Question Area -->
+        <section class="lg:w-3/4 bg-white rounded-2xl shadow-sm border border-[#f0ece1] p-5 md:p-8 min-h-[500px] flex flex-col relative" id="question-container">
+            
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="text-center my-auto fade-in py-10">
+                <div class="text-6xl mb-4">🕌</div>
+                <h2 class="text-2xl font-bold text-[#4f7a54] mb-3 font-['Lora']">Selamat Datang di Simulasi</h2>
+                <p class="text-gray-600 mb-8 max-w-lg mx-auto text-sm md:text-base">Materi komprehensif berdasarkan kisi-kisi PAI Kelas XI. Anda dapat mengecek jawaban per soal menggunakan tombol Petunjuk & Cek Jawaban agar proses belajar lebih efektif.</p>
+                <button id="btn-start" class="bg-[#7a9e7e] hover:bg-[#4f7a54] text-white font-bold py-3 px-8 rounded-full transition-all transform hover:scale-105 shadow-md">
+                    Mulai Belajar Sekarang
+                </button>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div id="quiz-screen" class="hidden flex-col h-full fade-in">
+                <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                    <span id="q-number" class="bg-[#e8dfc8] text-[#8b6f47] font-bold px-3 py-1 rounded-lg text-sm">Soal 1</span>
+                    <span id="q-category" class="text-xs font-bold uppercase tracking-wider text-gray-400">Pilihan Ganda</span>
+                </div>
+                
+                <div id="q-text" class="text-base md:text-lg font-medium text-gray-800 mb-6 leading-relaxed">
+                    <!-- Question Text -->
+                </div>
+
+                <div id="options-container" class="flex flex-col gap-3 flex-grow">
+                    <!-- Options / Essay Textarea -->
+                </div>
+
+                <!-- Helper Buttons (Hint & Check) -->
+                <div id="action-buttons" class="flex flex-wrap gap-3 mt-6 pt-4 border-t border-gray-100">
+                    <button id="btn-hint" class="flex-1 md:flex-none justify-center px-4 py-2.5 bg-[#fff9ed] text-[#b8922a] border border-[#f5d98a] hover:bg-[#fdf3dc] rounded-xl font-bold text-sm transition-colors flex items-center gap-2">
+                        💡 Lihat Petunjuk
+                    </button>
+                    <button id="btn-check" class="flex-1 md:flex-none justify-center px-4 py-2.5 bg-[#e8f5ea] text-[#4f7a54] border border-[#a8c5ac] hover:bg-[#d4f0d8] rounded-xl font-bold text-sm transition-colors flex items-center gap-2">
+                        ✅ Cek Jawaban
+                    </button>
+                </div>
+
+                <!-- Hint Box Container -->
+                <div id="hint-box" class="hidden mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-900 fade-in">
+                    <strong>💡 Petunjuk Singkat:</strong> <span id="hint-text"></span>
+                </div>
+
+                <!-- Prev/Next Navigation -->
+                <div class="flex justify-between items-center mt-8 gap-4">
+                    <button id="btn-prev" class="flex-1 md:flex-none text-center px-5 py-3 rounded-xl font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        &larr; <span class="hidden xs:inline">Sebelumnya</span>
+                    </button>
+                    <button id="btn-next" class="flex-1 md:flex-none text-center px-5 py-3 bg-gray-800 hover:bg-black text-white rounded-xl font-bold transition-colors">
+                        <span class="hidden xs:inline">Selanjutnya</span> &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- Result Screen -->
+            <div id="result-screen" class="hidden flex-col items-center justify-center my-auto fade-in py-10">
+                <div class="text-5xl mb-4">🎉</div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2 font-['Lora']">Simulasi Selesai!</h2>
+                <p class="text-gray-500 mb-8 text-center max-w-sm">Berikut adalah hasil evaluasi untuk bagian Pilihan Ganda.</p>
+                
+                <div class="bg-gradient-to-br from-[#7a9e7e] to-[#4a9b8f] text-white rounded-[2rem] p-8 shadow-xl text-center w-full max-w-sm mb-8 relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmYiLz48L3N2Zz4=')]"></div>
+                    <p class="text-sm font-bold uppercase tracking-wider mb-2 opacity-90 relative z-10">Skor Pilihan Ganda</p>
+                    <div class="text-7xl font-black mb-1 relative z-10" id="score-display">0</div>
+                    <p class="text-sm opacity-90 relative z-10">dari 100</p>
+                </div>
+
+                <div class="w-full flex flex-col sm:flex-row justify-center gap-3">
+                    <button id="btn-review" class="w-full sm:w-auto bg-white border-2 border-[#7a9e7e] text-[#7a9e7e] hover:bg-[#f0f7f1] font-bold py-3 px-6 rounded-xl transition-colors">
+                        Review Jawaban
+                    </button>
+                    <button id="btn-retry" class="w-full sm:w-auto bg-gray-800 hover:bg-black text-white font-bold py-3 px-6 rounded-xl transition-colors">
+                        Ulangi Simulasi
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-6 text-gray-400 text-xs md:text-sm mt-auto px-4">
+        <p>Dirancang untuk mempermudah belajar • Interaktif & Fokus</p>
+    </footer>
+
+    <script>
+        // Database Soal
+        const questions = [
+            // BAB 1
+            {
+                type: 'pg', no: 1,
+                text: "Perhatikan potongan ayat berikut!\n<div class='font-arabic text-3xl my-4 text-[#4f7a54]'>وَمِنْهُمْ مَّنْ يُّؤْمِنُ بِهٖ .... </div>\nLanjutan dari potongan QS. Yūnus ayat 40 di atas adalah...",
+                options: [
+                    "وَمِنْهُمْ مَّنْ لَّا يُؤْمِنُ بِهٖ", "وَرَبُّكَ اَعْلَمُ بِالْمُفْسِدِيْنَ", "لِّيْ عَمَلِيْ وَلَكُمْ عَمَلُكُمْ", "اَنْتُمْ بَرِيْۤـُٔوْنَ مِمَّآ اَعْمَلُ", "وَاَنَا۠ بَرِيْۤءٌ مِّمَّا تَعْمَلُوْنَ"
+                ],
+                answer: 0, hint: "Setelah Allah menyebutkan 'di antara mereka ada yang beriman', maka kalimat selanjutnya menyebutkan kebalikannya.",
+                explanation: "Sesuai urutan QS. Yunus: 40, setelah 'Wa minhum man yu'minu bih' lanjutannya adalah 'Wa minhum man laa yu'minu bih'."
+            },
+            {
+                type: 'pg', no: 2,
+                text: "Terjemahan yang tepat untuk potongan ayat <span class='font-arabic text-2xl'>اَنْتُمْ بَرِيْۤـُٔوْنَ مِمَّآ اَعْمَلُ</span> dalam QS. Yūnus: 41 adalah...",
+                options: [
+                    "Tuhanmu lebih mengetahui tentang para perusak", "Bagiku amalku dan bagimu amalmu", "Kamu tidak bertanggung jawab atas apa yang aku kerjakan", "Dan aku berlepas diri dari apa yang kamu kerjakan", "Dan jika mereka tetap mendustakanmu"
+                ],
+                answer: 2, hint: "Kata 'bari'uuna' memiliki akar makna membebaskan diri / tidak ikut campur / tidak bertanggung jawab atas perbuatan Nabi.",
+                explanation: "Lafadz 'Antum bari'uuna mimmaa a'mal' memiliki arti 'Kamu berlepas diri (tidak bertanggung jawab) atas apa yang aku kerjakan'."
+            },
+            {
+                type: 'pg', no: 3,
+                text: "Pada lafadz <span class='font-arabic text-2xl'>مَّنْ يُّؤْمِنُ</span> terdapat hukum bacaan tajwid...",
+                options: [
+                    "Idzhar Halqi karena nun sukun bertemu ya", "Idgham Bighunnah karena nun sukun bertemu ya", "Idgham Bilaghunnah karena nun sukun bertemu mim", "Ikhfa' Haqiqi karena nun sukun bertemu mim", "Iqlab karena nun sukun bertemu ba"
+                ],
+                answer: 1, hint: "Perhatikan pertemuan Nun sukun (نْ) dengan huruf Ya (ي). Ingat singkatan huruf Bighunnah: Ya-Nun-Mim-Wawu.",
+                explanation: "Hukum bacaan pada 'man yu'minu' adalah Idgham Bighunnah karena terdapat Nun Sukun bertemu dengan huruf Ya."
+            },
+            // BAB 2
+            {
+                type: 'pg', no: 4,
+                text: "Sikap toleransi antar umat seagama (internal umat Islam) sangat penting untuk menjaga ukhuwah. Berikut ini yang merupakan contoh perilaku toleransi antar umat seagama adalah...",
+                options: [
+                    "Mengikuti perayaan ibadah agama lain untuk menghormati", "Memaksa teman membatalkan puasanya karena sedang bepergian bersama", "Menghormati perbedaan pendapat mengenai tata cara ibadah (mazhab) di masyarakat", "Menyalahkan imam masjid yang memendekkan bacaan shalatnya", "Melarang pembangunan tempat ibadah agama lain"
+                ],
+                answer: 2, hint: "Fokus pada kata 'seagama'. Ini berkaitan dengan perbedaan furu'iyyah (cabang fikih) seperti mazhab atau qunut.",
+                explanation: "Toleransi antar umat seagama dicontohkan dengan saling menghargai perbedaan mazhab (misal: qunut/tidak qunut, bedug/kentongan)."
+            },
+            {
+                type: 'pg', no: 5,
+                text: "Islam mengajarkan sifat <i>Al-Samhah</i> (toleran) dalam kehidupan bermasyarakat. Manfaat utama dari diterapkannya sikap toleransi adalah...",
+                options: [
+                    "Memudarkan batasan-batasan syariat", "Menciptakan kerukunan dan kedamaian dalam kehidupan bermasyarakat", "Memudahkan seseorang berpindah-pindah keyakinan", "Menyatukan seluruh agama menjadi satu ajaran", "Menghilangkan kewajiban berdakwah"
+                ],
+                answer: 1, hint: "Toleransi bertujuan untuk menciptakan kondisi sosial yang positif dan damai di tengah perbedaan.",
+                explanation: "Manfaat toleransi adalah menciptakan kerukunan umat beragama, persatuan bangsa, dan mewujudkan kehidupan yang damai."
+            },
+            {
+                type: 'pg', no: 6,
+                text: "Ayat Al-Qur'an yang secara khusus menjelaskan bahwa memelihara kehidupan satu orang manusia seolah-olah memelihara kehidupan semua manusia adalah...",
+                options: [
+                    "QS. Yūnus ayat 40", "QS. Yūnus ayat 41", "QS. Al-Hujurat ayat 6", "QS. Al-Hujurat ayat 12", "QS. Al-Māidah ayat 32"
+                ],
+                answer: 4, hint: "Ingat ayat yang bercerita tentang hukum untuk Bani Israil terkait larangan membunuh sembarangan.",
+                explanation: "QS. Al-Maidah ayat 32 menjelaskan tentang hukum menjaga kehidupan manusia dan larangan membunuh."
+            },
+            {
+                type: 'pg', no: 7,
+                text: "Berdasarkan QS. Al-Māidah: 32, barangsiapa yang membunuh manusia bukan karena qishash atau bukan karena berbuat kerusakan, maka ia diibaratkan...",
+                options: [
+                    "Telah berbuat kerusakan di bumi", "Telah membunuh seluruh manusia", "Akan hidup dalam kesengsaraan", "Tidak akan diterima amal ibadahnya", "Bagaikan hewan yang hina"
+                ],
+                answer: 1, hint: "Hukuman filosofisnya sangat berat, diibaratkan memusnahkan seluruh peradaban manusia.",
+                explanation: "Ayat tersebut menyatakan 'faka'annamaa qatalan-naasa jamii'an' yang artinya seakan-akan dia telah membunuh manusia seluruhnya."
+            },
+            {
+                type: 'pg', no: 8,
+                text: "Berikut ini yang merupakan cerminan penerapan nilai memelihara kehidupan manusia sesuai QS. Al-Māidah: 32 dalam kehidupan sehari-hari adalah...",
+                options: [
+                    "Mendonorkan darah bagi pasien yang membutuhkan dan menolong korban bencana", "Membiarkan teman yang sedang berkelahi", "Menebang pohon sembarangan", "Menyembunyikan informasi penting tentang suatu penyakit", "Membalas ejekan teman di media sosial"
+                ],
+                answer: 0, hint: "Cari opsi yang secara langsung berkaitan dengan tindakan 'menyelamatkan nyawa' secara medis/kemanusiaan.",
+                explanation: "Mendonorkan darah dan menolong korban bencana adalah aksi nyata menyelamatkan/memelihara kehidupan."
+            },
+            // BAB 3
+            {
+                type: 'pg', no: 9,
+                text: "Muru'ah adalah upaya menjaga kehormatan diri dari hal-hal yang buruk. Di bawah ini yang merupakan contoh perilaku menjaga kehormatan diri secara fisik adalah...",
+                options: [
+                    "Menceritakan keburukan keluarga", "Berpakaian yang menutup aurat dan tidak menampakkan lekuk tubuh", "Memamerkan barang mewah di media sosial", "Menyendiri secara total", "Berbicara dengan nada tinggi"
+                ],
+                answer: 1, hint: "Muru'ah menjaga martabat dari pandangan negatif orang lain, terutama terkait penampilan fisik.",
+                explanation: "Berpakaian menutup aurat adalah bentuk utama penjagaan kehormatan diri ('iffah/muru'ah) secara fisik."
+            },
+            {
+                type: 'pg', no: 10,
+                text: "Perilaku menjaga kehormatan diri sangat berkaitan erat dengan keimanan. Perilaku berikut ini yang secara langsung dapat menguatkan keimanan seseorang adalah...",
+                options: [
+                    "Mencari kesalahan orang lain", "Shalat tepat waktu, rajin berzikir, dan menjauhi maksiat", "Bekerja keras siang malam hingga lupa waktu", "Banyak berdebat tentang agama", "Membaca buku-buku filsafat"
+                ],
+                answer: 1, hint: "Iman meningkat dengan ketaatan (ibadah vertikal) dan menjauhi larangan (maksiat).",
+                explanation: "Iman dikuatkan dengan amal saleh murni seperti shalat tepat waktu, zikir, dan menjauhi maksiat."
+            },
+            {
+                type: 'pg', no: 11,
+                text: "Penerapan sikap menjaga kehormatan diri di lingkungan sekolah yang paling tepat ditunjukkan dengan sikap...",
+                options: [
+                    "Menghindari ekstrakurikuler", "Hanya berteman dengan yang seagama", "Tidak menyontek saat ujian meskipun tidak diawasi", "Melawan aturan sekolah", "Sering meminta traktiran"
+                ],
+                answer: 2, hint: "Sikap muru'ah menjaga harga diri pelajar dari tindakan memalukan dan curang secara akademis.",
+                explanation: "Tidak menyontek adalah muru'ah di sekolah, karena menyontek merendahkan martabat dan kejujuran."
+            },
+            {
+                type: 'pg', no: 12,
+                text: "Sifat malu (Al-Hayā') dibagi menjadi dua. Malu yang Allah ciptakan sebagai fitrah/naluri bawaan dalam diri manusia untuk menghindari keburukan disebut...",
+                options: [
+                    "Malu Muktasab", "Malu Fitrah", "Malu Gharizah (Naluri)", "Malu Riya'", "Malu Duniawi"
+                ],
+                answer: 2, hint: "Perhatikan istilah bahasa Arab untuk 'naluri' atau insting bawaan.",
+                explanation: "Malu gharizah adalah malu bawaan (naluri), sedangkan malu muktasab adalah malu yang dilatih dari iman."
+            },
+            {
+                type: 'pg', no: 13,
+                text: "Di bawah ini, perilaku malu yang termasuk dalam kategori 'menguatkan keimanan' (malu muktasab) yang didasari ketakwaan adalah...",
+                options: [
+                    "Malu untuk tampil di depan kelas", "Malu berbuat dosa saat sendirian karena yakin Allah Maha Mengawasi (Raqabatullah)", "Malu bertanya kepada guru", "Malu memakai pakaian bekas", "Malu mengakui kesalahan"
+                ],
+                answer: 1, hint: "Malu muktasab dilandasi kesadaran rohani bahwa Allah selalu melihat (muraqabah).",
+                explanation: "Malu berbuat dosa karena merasa diawasi Allah adalah puncak dari sifat malu karena iman."
+            },
+            {
+                type: 'pg', no: 14,
+                text: "Nabi Muhammad Saw. bersabda bahwa 'Malu itu adalah sebagian dari iman.' Manfaat utama dari memiliki sifat malu yang benar adalah...",
+                options: [
+                    "Menghindarkan seseorang dari perbuatan maksiat dan tercela", "Membuat seseorang menjadi pendiam", "Memudahkan mencari alasan", "Menjauhkan diri dari masyarakat", "Menutupi kekurangan finansial"
+                ],
+                answer: 0, hint: "Sifat malu berfungsi sebagai 'rem' otomatis dalam diri manusia.",
+                explanation: "Sifat malu bertindak sebagai benteng yang mencegah seseorang dari berbuat dosa dan maksiat."
+            },
+            {
+                type: 'pg', no: 15,
+                text: "Jika seseorang melakukan kebaikan bukan karena Allah (tidak ikhlas), melainkan karena mengharap pujian manusia (riya'), maka akibatnya adalah...",
+                options: [
+                    "Amalnya dilipatgandakan pahalanya", "Amalnya akan menjadi sia-sia dan tidak bernilai di sisi Allah", "Mendapat kedudukan tinggi di akhirat", "Menjadi panutan masyarakat", "Mendapatkan ketenangan batin"
+                ],
+                answer: 1, hint: "Pujian manusia di dunia akan menghapus nilai pahalanya di akhirat (zero reward).",
+                explanation: "Amal yang dicampuri riya' dan kehilangan keikhlasan tidak akan diterima Allah sehingga menjadi sia-sia."
+            },
+            {
+                type: 'pg', no: 16,
+                text: "Perilaku berikut yang paling mencerminkan penerapan sifat ikhlas dalam kehidupan sehari-hari adalah...",
+                options: [
+                    "Memberikan sedekah lalu mengunggahnya di medsos", "Hanya beribadah rajin jika di pesantren", "Membantu meringankan beban teman tanpa pamrih dan tidak mengungkitnya", "Belajar giat semata agar mendapat pujian orang tua", "Menyingkirkan duri di jalan sambil mengeluh"
+                ],
+                answer: 2, hint: "Ikhlas berarti tidak pamrih, tidak riya', dan tidak mengungkit (mann/adzā).",
+                explanation: "Membantu tanpa pamrih dan tidak mengharap pujian manusia adalah ciri kuat sifat ikhlas."
+            },
+            {
+                type: 'pg', no: 17,
+                text: "Menurut para ulama, makna ikhlas yang sebenarnya dalam beramal adalah...",
+                options: [
+                    "Menyembunyikan amal kebaikan dari siapapun", "Membersihkan amal dari segala hal yang mengotorinya dan semata mengharap ridha Allah", "Beribadah hanya karena surga dan neraka", "Menghiraukan pujian tetapi marah jika dihina", "Tidak mengingat amal buruk"
+                ],
+                answer: 1, hint: "Ikhlas berarti 'memurnikan' tujuan hanya 100% untuk Allah, bebas dari tendensi pujian makhluk.",
+                explanation: "Ikhlas berarti memurnikan ibadah hanya kepada Allah, membersihkan hati dari motif riya' dan sum'ah."
+            },
+            {
+                type: 'pg', no: 18,
+                text: "Sifat zuhud sering disalahpahami sebagai sikap menjauhi dunia secara total. Padahal, penerapan zuhud yang benar menurut ajaran Islam adalah...",
+                options: [
+                    "Tidak mau bekerja dan hanya beribadah", "Menolak menggunakan teknologi", "Tidak memiliki harta benda sama sekali", "Menggunakan harta yang dimiliki sebagai sarana menuju akhirat, bukan tujuan hidup", "Mengharamkan makanan enak"
+                ],
+                answer: 3, hint: "Ulama mendefinisikan zuhud sebagai kondisi hati yang tidak diperbudak kekayaan, walau punya harta melimpah.",
+                explanation: "Zuhud adalah menyikapi harta secara proporsional, menjadikannya sarana (kendaraan) ibadah ke akhirat, bukan menuhankannya."
+            },
+            {
+                type: 'pg', no: 19,
+                text: "Seorang pengusaha muslim sukses memiliki harta berlimpah, namun ia tetap hidup sederhana, tidak pamer, dan sangat rajin bersedekah. Sikap pengusaha tersebut mencerminkan...",
+                options: [
+                    "Qana'ah", "Zuhud", "Tawakkal", "Raja'", "Syaja'ah"
+                ],
+                answer: 1, hint: "Kondisi tidak terikat pada dunia padahal hartanya banyak adalah inti dari konsep ini di era modern.",
+                explanation: "Hidup sederhana meski kaya dan mendahulukan sedekah daripada flexing adalah cerminan zuhud masa kini."
+            },
+            {
+                type: 'pg', no: 20,
+                text: "Salah satu manfaat nyata dari memiliki sifat zuhud dalam kehidupan adalah...",
+                options: [
+                    "Kebal penyakit", "Terhindar dari penyakit 'wahn' (terlalu cinta dunia dan takut mati)", "Selalu kaya tanpa bekerja", "Tidak pernah dapat musibah", "Dibebaskan syariat"
+                ],
+                answer: 1, hint: "Penyakit spiritual yang melemahkan umat Islam di akhir zaman adalah Wahn (hubbud dunya wa karahiyatul maut).",
+                explanation: "Zuhud menyelamatkan hati dari wahn (cinta dunia berlebihan) sehingga hidup lebih tenang."
+            },
+            // BAB 4
+            {
+                type: 'pg', no: 21,
+                text: "Adab yang paling pertama dan utama yang harus dimiliki seorang muslim sebelum beraktivitas di media sosial adalah...",
+                options: [
+                    "Mencari followers", "Memilih foto profil menarik", "Memasang niat yang baik (lillāhi ta'āla) agar bernilai ibadah", "Membuat akun anonim", "Mengikuti tren"
+                ],
+                answer: 2, hint: "Innamal a'malu binniyat (segala perbuatan bergantung pada niatnya).",
+                explanation: "Niat yang baik (lillahi ta'ala) menjadikan aktivitas sepele seperti bermedsos bernilai ibadah dan aman dari hal negatif."
+            },
+            {
+                type: 'pg', no: 22,
+                text: "Di era digital, media sosial ibarat pisau bermata dua. Berikut ini yang merupakan manfaat positif dari media sosial bagi pelajar muslim adalah...",
+                options: [
+                    "Mencontek jawaban tugas", "Menjadi sarana efektif untuk menyebarkan dakwah, ilmu, dan silaturahmi", "Ajang flexing", "Membuang waktu luang", "Melampiaskan amarah anonim"
+                ],
+                answer: 1, hint: "Fokus pada kegunaan medsos untuk menyebarkan syiar dan menjaga hubungan (hablum minannas).",
+                explanation: "Manfaat utama media sosial dalam Islam adalah untuk edukasi, dakwah, dan menjaga tali silaturahmi."
+            },
+            {
+                type: 'pg', no: 23,
+                text: "Sebagai seorang muslim yang bijak, ketika menerima informasi di grup WhatsApp yang belum jelas kebenarannya, adab yang harus dilakukan adalah...",
+                options: [
+                    "Langsung meneruskan (share)", "Menghapus pesan agar hemat memori", "Melakukan tabayyun (meneliti kebenaran) sebelum disebarkan", "Memarahi pengirim", "Mengomentari provokatif"
+                ],
+                answer: 2, hint: "Ingat prinsip saring sebelum sharing yang diambil dari QS Al-Hujurat ayat 6.",
+                explanation: "Prinsip Tabayyun ditekankan agar kita tidak menjadi agen penyebar fitnah/hoaks."
+            },
+            {
+                type: 'pg', no: 24,
+                text: "Menyebarkan hoaks atau berita palsu di media sosial sangat dilarang dalam Islam. Hal ini sejalan dengan larangan Al-Qur'an (QS. Al-Hajj: 30) untuk menjauhi...",
+                options: [
+                    "Perkataan dusta (bohong)", "Prasangka buruk", "Perbuatan zina", "Memakan harta riba", "Menggunjing (ghibah)"
+                ],
+                answer: 0, hint: "Hoaks intinya adalah informasi palsu yang direkayasa, sinonim dengan kebohongan.",
+                explanation: "QS Al-Hajj: 30 secara tegas memerintahkan 'wajtanibu qawlaz-zuur' (jauhilah perkataan dusta/hoaks)."
+            },
+            {
+                type: 'pg', no: 25,
+                text: "Banyak keluarga yang terpisah jarak antar pulau. Namun dengan media sosial, mereka dapat melakukan video call. Hal ini menunjukkan manfaat media sosial sebagai...",
+                options: [
+                    "Media bisnis", "Ancaman privasi", "Media pembelajaran", "Sumber hiburan", "Sarana merekatkan silaturahmi dan komunikasi"
+                ],
+                answer: 4, hint: "Video call dengan keluarga bertujuan menjaga kekerabatan yang diajarkan dalam Islam.",
+                explanation: "Menghubungkan sanak famili yang terpisah jauh adalah esensi dari menjaga silaturahmi."
+            },
+            {
+                type: 'pg', no: 26,
+                text: "Perhatikan firman Allah: 'Wahai orang-orang yang beriman! Jika seseorang yang fasik datang kepadamu membawa suatu berita, maka telitilah kebenarannya...' Ayat ini adalah dasar hukum tabayyun, yaitu...",
+                options: [
+                    "QS. Al-Māidah/5: 32", "QS. Al-Hujurāt/49: 6", "QS. Al-Hujurāt/49: 12", "QS. Yūnus/10: 40", "QS. Yūnus/10: 41"
+                ],
+                answer: 1, hint: "Cari ayat di Surat Al-Hujurat yang nomor ayatnya tunggal (satu digit).",
+                explanation: "QS. Al-Hujurat ayat 6 adalah dalil wajibnya melakukan klarifikasi (tabayyun) saat menerima kabar meragukan."
+            },
+            {
+                type: 'pg', no: 27,
+                text: "Menulis status yang berisi sindiran bernada su'udzan (buruk sangka), tajassus (mencari kesalahan), dan ghibah dilarang berdasarkan firman Allah Swt. dalam...",
+                options: [
+                    "QS. Al-Hujurāt/49: 6", "QS. Al-Hujurāt/49: 12", "QS. Al-An'am/6: 162", "QS. Al-Māidah/5: 32", "QS. An-Nahl/16: 125"
+                ],
+                answer: 1, hint: "Ayat ini juga berada di Surat Al-Hujurat namun nomornya lebih besar (belasan).",
+                explanation: "Kewajiban menjauhi prasangka, larangan tajassus, dan ghibah termaktub jelas di QS. Al-Hujurat: 12."
+            },
+            {
+                type: 'pg', no: 28,
+                text: "Selain manfaat, penggunaan media sosial tanpa kontrol juga membawa dampak negatif. Di bawah ini yang merupakan dampak negatif nyata media sosial adalah...",
+                options: [
+                    "Promosi produk UMKM", "Ruang diskusi ilmiah", "Meningkatnya ujaran kebencian (hate speech) dan cyberbullying", "Berbagi jadwal kajian", "Aplikasi edukasi menjamur"
+                ],
+                answer: 2, hint: "Pilih opsi yang berkaitan dengan kerusakan akhlak dalam interaksi digital.",
+                explanation: "Hate speech, cyberbullying, penyebaran hoaks, dan pornografi adalah bahaya utama media sosial."
+            },
+            // BAB 5
+            {
+                type: 'pg', no: 29,
+                text: "Pernikahan dalam Islam dianggap sah apabila memenuhi rukun-rukun yang telah ditetapkan. Rukun nikah tersebut berjumlah...",
+                options: [
+                    "3 rukun (Suami, Istri, Wali)", "4 rukun (Suami, Istri, Wali, Mahar)", "5 rukun (Suami, Istri, Wali, Dua Saksi, Sighat/Ijab-Qabul)", "6 rukun (Suami, Istri, Wali, Saksi, Penghulu, Mahar)", "5 rukun (Suami, Istri, Wali, Penghulu, Ijab-Qabul)"
+                ],
+                answer: 2, hint: "Penghulu dan mahar tidak termasuk dalam urutan pokok rukun nikah.",
+                explanation: "5 Rukun Nikah: Calon Suami, Calon Istri, Wali, Dua Orang Saksi, dan Sighat (Ijab-Qabul)."
+            },
+            {
+                type: 'pg', no: 30,
+                text: "Menurut Rasulullah Saw., wanita dinikahi karena 4 hal: harta, nasab, kecantikan, dan agama. Dari keempat hal tersebut, yang paling utama untuk dijadikan acuan adalah...",
+                options: [
+                    "Hartanya", "Kecantikannya", "Keturunannya", "Agamanya, niscaya akan beruntung", "Pendidikannya"
+                ],
+                answer: 3, hint: "'Fadzfar bidzaatid diin taribat yadaak'. Jika agamanya baik, ia akan menjaga dirinya dan keluarganya.",
+                explanation: "Agama diprioritaskan karena ketaatan kepada Allah adalah pondasi keluarga yang kokoh dan harmonis."
+            },
+            {
+                type: 'pg', no: 31,
+                text: "Dalam mengarungi kehidupan rumah tangga, konflik kadang tidak dapat dihindari. Langkah pertama dan paling dasar yang diajarkan Islam dalam menyelesaikan masalah adalah...",
+                options: [
+                    "Langsung mengajukan cerai", "Pisah ranjang selamanya", "Menceritakan masalah keluarga ke tetangga", "Melakukan komunikasi terbuka dan musyawarah antara suami istri", "Melakukan kekerasan"
+                ],
+                answer: 3, hint: "Musyawarah internal tanpa campur tangan pihak ketiga adalah langkah preventif paling awal.",
+                explanation: "Komunikasi terbuka berdua dengan kepala dingin adalah solusi tahap pertama sebelum melibatkan hakam/keluarga."
+            },
+            {
+                type: 'pg', no: 32,
+                text: "Terciptanya keluarga yang sakinah, mawaddah, warahmah merupakan tujuan pernikahan. Faktor kunci yang sangat mempengaruhi keharmonisan ini adalah...",
+                options: [
+                    "Saling menutupi gaji", "Suami memegang kendali tanpa peduli istri", "Saling memahami hak dan kewajiban berlandaskan agama", "Membatasi pergaulan istri total", "Tinggal bersama mertua"
+                ],
+                answer: 2, hint: "Harmoni lahir saat setiap pihak memberikan hak pasangannya dan menunaikan kewajibannya.",
+                explanation: "Pemahaman hak dan kewajiban serta landasan iman mencegah keegoisan dalam rumah tangga."
+            },
+            {
+                type: 'pg', no: 33,
+                text: "Seorang pemuda sudah mampu lahir batin untuk menikah dan ia sangat khawatir terjerumus ke dalam perbuatan zina jika tidak segera menikah. Hukum menikah bagi pemuda tersebut adalah...",
+                options: [
+                    "Sunah", "Wajib", "Mubah", "Makruh", "Haram"
+                ],
+                answer: 1, hint: "Mencegah diri dari hal haram (zina) hukumnya wajib, maka sarana mencegahnya (menikah) juga jadi wajib.",
+                explanation: "Jika seseorang mampu secara finansial dan fisik, serta ADA KEKHAWATIRAN jatuh ke dalam zina, hukum nikah menjadi wajib."
+            },
+            {
+                type: 'pg', no: 34,
+                text: "Jika terjadi perselisihan (syiqaq) suami istri yang tidak dapat diselesaikan berdua, Al-Qur'an (QS. An-Nisa:35) menganjurkan mengutus perwakilan penengah yang disebut...",
+                options: [
+                    "Wali Nasab", "Saksi Ahli", "Hakam (wasit dari pihak keluarga)", "Penghulu", "Hakim Pengadilan"
+                ],
+                answer: 2, hint: "Satu diutus dari keluarga laki-laki dan satu dari keluarga perempuan.",
+                explanation: "Hakam bertugas sebagai mediator yang adil untuk mencari jalan damai (ishlah) bagi pasangan suami istri."
+            },
+            {
+                type: 'pg', no: 35,
+                text: "Keberadaan wali sangat menentukan sah atau tidaknya pernikahan. Syarat utama mutlak agar seseorang berhak menjadi wali nikah adalah...",
+                options: [
+                    "Laki-laki, Islam, baligh, berakal, dan adil", "Laki-laki atau perempuan dewasa", "Pejabat negara beragama Islam", "Siapapun yang ditunjuk pengantin", "Harus ayah kandung selamanya"
+                ],
+                answer: 0, hint: "Seorang wali harus memiliki kewarasan akal, kedewasaan, seiman, dan berjenis kelamin laki-laki.",
+                explanation: "Syarat mutlak wali adalah Laki-laki, Islam, baligh, berakal, merdeka, dan adil."
+            },
+            {
+                type: 'pg', no: 36,
+                text: "Dalam masa iddah akibat talak satu/dua (talak raj'i), suami menyadari kesalahannya dan ingin kembali tanpa akad nikah baru. Cara ini disebut...",
+                options: [
+                    "Khuluk", "Fasakh", "Zihar", "Rujuk", "Lian"
+                ],
+                answer: 3, hint: "Kata dasarnya bermakna kembali atau mengembalikan ikatan.",
+                explanation: "Rujuk adalah hak prerogatif suami untuk mengembalikan istri yang masih dalam masa iddah talak raj'i."
+            },
+            // BAB 6
+            {
+                type: 'pg', no: 37,
+                text: "Perceraian merupakan perkara halal yang paling dibenci Allah. Namun, talak diperbolehkan jika keadaan darurat. Alasan penyebab perceraian yang dibenarkan adalah...",
+                options: [
+                    "Istri menolak membelikan barang", "Suami tidak suka masakan istri", "Terjadi kekerasan KDRT dan suami tidak memberi nafkah", "Suami bosan", "Istri meminta cerai tanpa alasan"
+                ],
+                answer: 2, hint: "Perceraian dibolehkan untuk menghindari bahaya/kemudaratan (dhirar) fisik maupun finansial pokok.",
+                explanation: "Ketidakmampuan memberi nafkah dan kekerasan yang mengancam nyawa membolehkan cerai agar tidak dzalim."
+            },
+            {
+                type: 'pg', no: 38,
+                text: "Hikmah utama dibolehkannya perceraian (sebagai solusi darurat terakhir) dalam syariat Islam adalah...",
+                options: [
+                    "Kebebasan ganti pasangan", "Sebagai jalan keluar untuk mengakhiri penderitaan rumah tangga yang toxic", "Agar pengadilan dapat pemasukan", "Menghukum istri", "Ajang adu ego"
+                ],
+                answer: 1, hint: "Daripada mempertahankan ikatan yang merusak fisik dan psikis anak serta pasangan, Islam memberi pintu keluar darurat.",
+                explanation: "Hikmah perceraian adalah menyelamatkan individu dari penderitaan berlanjut dalam rumah tangga yang tak bisa diselamatkan."
+            },
+            {
+                type: 'pg', no: 39,
+                text: "Seorang perempuan yang telah bercerai dari suaminya wajib menjalani masa Iddah sebelum menikah lagi. Hikmah utama ditetapkannya iddah adalah...",
+                options: [
+                    "Menghukum perempuan", "Memberi waktu kumpulkan harta", "Memastikan rahim kosong (tidak hamil) untuk menjaga garis nasab anak", "Agar lupa mantan", "Syarat administrasi"
+                ],
+                answer: 2, hint: "Istilah fikihnya adalah 'Bara'atur rahim' (membersihkan/memastikan kondisi rahim).",
+                explanation: "Hikmah paling esensial dari Iddah adalah memastikan status rahim demi menjaga kejelasan nasab keturunan."
+            },
+            // BAB 7
+            {
+                type: 'pg', no: 40,
+                text: "Prof. Dr. H. Harun Nasution membagi sejarah perkembangan Islam ke dalam tiga periode besar. Periode Klasik (termasuk masa keemasan) berlangsung pada rentang tahun...",
+                options: [
+                    "650 – 1000 M", "650 – 1250 M", "1250 – 1500 M", "1500 – 1800 M", "1800 M – Sekarang"
+                ],
+                answer: 1, hint: "Berakhir pada saat kota Baghdad hancur diserang bangsa Mongol (Hulagu Khan).",
+                explanation: "Periode Klasik sejarah Islam dihitung dari masa kenabian/sahabat (650 M) hingga runtuhnya Abbasiyah (1250 M)."
+            }
+        ];
+
+        // Database Essay
+        const essays = [
+            {
+                no: 41,
+                text: "Tuliskan 3 poin utama yang terkandung dalam QS. Yūnus/10: 40–41 terkait dengan prinsip toleransi dan pertanggungjawaban amalan!",
+                hint: "Sebutkan adanya dua golongan manusia, prinsip 'bagiku amalku bagimu amalmu', dan soal pertanggungjawaban di akhirat.",
+                answerKey: "Kunci Jawaban Singkat:\n1. Manusia terbagi dua: beriman kepada Al-Qur'an dan yang tetap mendustakan.\n2. Toleransi: 'Bagiku pekerjaanku, bagimu pekerjaanmu' (tidak memaksakan agama).\n3. Pertanggungjawaban Individual: Tiap orang menanggung amalnya sendiri di akhirat."
+            },
+            {
+                no: 42,
+                text: "Jelaskan secara singkat bagaimana perilaku menjaga kehormatan (muru'ah) dan sifat malu (hayā') saling berkaitan dalam menguatkan keimanan!",
+                hint: "Muru'ah adalah penjagaan wujud fisiknya/akhlak luar, sedangkan malu adalah rem psikologis/batin dari dalam dada.",
+                answerKey: "Kunci Jawaban Singkat:\nMuru'ah adalah wujud perbuatan menjaga harga diri dari maksiat, sedangkan sifat malu (hayā') adalah motivasi batin yang muncul karena merasa selalu diawasi Allah. Kedua sifat ini bekerja sama menahan diri dari dosa, sehingga keimanan semakin kokoh."
+            },
+            {
+                no: 43,
+                text: "Sebutkan 4 adab penting dalam menggunakan media sosial menurut pandangan Islam yang didasarkan pada ayat Al-Qur'an atau Hadis!",
+                hint: "Ada adab soal Niat, mengecek info (Hujurat 6), bahasa yang santun, dan tidak menyebar dusta.",
+                answerKey: "Kunci Jawaban Singkat (Pilih 4):\n1. Niat lillahi ta'ala untuk kebaikan.\n2. Saring sebelum sharing / Tabayyun (QS. Hujurat: 6).\n3. Tidak menyebar hoaks (QS. Hajj: 30).\n4. Menghindari ghibah dan hate speech (QS. Hujurat: 12).\n5. Bahasa santun dalam berkomentar."
+            },
+            {
+                no: 44,
+                text: "Sebutkan 4 jenis pernikahan yang diharamkan / tidak sah dalam hukum syariat Islam!",
+                hint: "Ingat pernikahan beda agama, pernikahan sistem barter tanpa mahar, pernikahan berjangka waktu, dan jika tidak ada wali.",
+                answerKey: "Kunci Jawaban Singkat (Pilih 4):\n1. Nikah Mut'ah (kontrak/berbatas waktu).\n2. Nikah Syighar (barter anak perempuan tanpa mahar).\n3. Nikah saat keadaan Ihram (Haji/Umrah).\n4. Nikah tanpa adanya Wali Nikah.\n5. Nikah Muhallil.\n6. Menikahi perempuan dalam masa Iddah.\n7. Menikahi Mahram."
+            },
+            {
+                no: 45,
+                text: "Apa faktor utama yang mendorong umat Islam untuk melakukan gerakan modernisasi IPTEK pada Masa Modern (setelah tahun 1800 M)?",
+                hint: "Faktor kondisi imperialisme/penjajahan negara-negara Eropa atas wilayah Islam dan pesatnya sains Eropa.",
+                answerKey: "Kunci Jawaban Singkat:\nKesadaran bahwa umat Islam tertinggal jauh di bidang teknologi, militer, dan pendidikan dibandingkan bangsa Barat (Eropa). Selain itu, kondisi memprihatinkan negara-negara Islam yang jatuh ke bawah penjajahan/kolonialisme mendorong ulama untuk bangkit dan mengambil alih kembali IPTEK modern."
+            }
+        ];
+
+        // State variables
+        let currentQuestion = 0;
+        let isEssayMode = false;
+        let answersPG = new Array(40).fill(null);
+        let answersEssay = new Array(5).fill("");
+        let checkedPG = new Array(40).fill(false); // Track individually checked questions
+        let checkedEssay = new Array(5).fill(false);
+        let isSubmitted = false; // When entire quiz is submitted
+
+        // DOM Elements
+        const screens = { welcome: document.getElementById('welcome-screen'), quiz: document.getElementById('quiz-screen'), result: document.getElementById('result-screen') };
+        const elements = {
+            qNumber: document.getElementById('q-number'), qCategory: document.getElementById('q-category'), qText: document.getElementById('q-text'),
+            optionsContainer: document.getElementById('options-container'),
+            btnPrev: document.getElementById('btn-prev'), btnNext: document.getElementById('btn-next'), btnSubmit: document.getElementById('btn-submit-all'),
+            navPg: document.getElementById('nav-pg'), navEssay: document.getElementById('nav-essay'), progressText: document.querySelectorAll('[id^="progress-text"]'),
+            btnHint: document.getElementById('btn-hint'), btnCheck: document.getElementById('btn-check'),
+            hintBox: document.getElementById('hint-box'), hintText: document.getElementById('hint-text'), actionBtns: document.getElementById('action-buttons')
+        };
+        const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+        const sidebarPanel = document.getElementById('sidebar-panel');
+
+        // Navigation Initialization
+        function initNavigation() {
+            elements.navPg.innerHTML = ''; elements.navEssay.innerHTML = '';
+            for(let i=0; i<40; i++) {
+                const btn = document.createElement('button');
+                btn.className = `w-full aspect-square rounded-lg font-bold text-xs border border-gray-200 text-gray-500 hover:border-[#7a9e7e] transition-colors nav-btn pg-nav-${i}`;
+                btn.innerText = i + 1;
+                btn.onclick = () => jumpToQuestion(i, false);
+                elements.navPg.appendChild(btn);
+            }
+            for(let i=0; i<5; i++) {
+                const btn = document.createElement('button');
+                btn.className = `w-full aspect-square rounded-lg font-bold text-xs border border-gray-200 text-gray-500 hover:border-[#7a9e7e] transition-colors nav-btn essay-nav-${i}`;
+                btn.innerText = i + 41;
+                btn.onclick = () => jumpToQuestion(i, true);
+                elements.navEssay.appendChild(btn);
+            }
+        }
+
+        // Core UI Updater
+        function updateUI() {
+            elements.hintBox.classList.add('hidden'); // Reset hint box
+            const isQChecked = isEssayMode ? checkedEssay[currentQuestion] : checkedPG[currentQuestion];
+            const forceCheckView = isSubmitted || isQChecked;
+
+            if (!isEssayMode) {
+                const q = questions[currentQuestion];
+                elements.qNumber.innerText = `Soal ${q.no}`;
+                elements.qCategory.innerText = "Pilihan Ganda";
+                elements.qText.innerHTML = q.text;
+                elements.hintText.innerText = q.hint;
+                
+                elements.optionsContainer.innerHTML = '';
+                q.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    const letters = ['A', 'B', 'C', 'D', 'E'];
+                    let extraClass = "border-gray-200 hover:border-[#7a9e7e] bg-white";
+                    
+                    if (forceCheckView) {
+                        btn.disabled = true;
+                        btn.classList.add('cursor-default');
+                        if (idx === q.answer) extraClass = "correct font-bold shadow-sm";
+                        else if (answersPG[currentQuestion] === idx) extraClass = "wrong";
+                        else extraClass = "border-gray-100 opacity-50 bg-gray-50";
+                    } else {
+                        if (answersPG[currentQuestion] === idx) extraClass = "selected font-bold text-[#4f7a54] shadow-sm";
+                    }
+
+                    btn.className = `w-full text-left p-3.5 md:p-4 rounded-xl border-2 flex items-start gap-3 md:gap-4 option-btn ${extraClass}`;
+                    btn.innerHTML = `<span class="font-extrabold flex-shrink-0 bg-black/5 w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-lg mt-0.5 text-xs md:text-sm">${letters[idx]}</span> <span class="leading-relaxed mt-1 text-sm md:text-base">${opt}</span>`;
+                    
+                    if(!forceCheckView) {
+                        btn.onclick = () => { answersPG[currentQuestion] = idx; updateUI(); };
+                    }
+                    elements.optionsContainer.appendChild(btn);
+                });
+
+                if (forceCheckView) {
+                    const exp = document.createElement('div');
+                    exp.className = "mt-4 p-4 bg-green-50 border border-green-200 rounded-xl text-sm md:text-base text-green-900 fade-in";
+                    exp.innerHTML = `<strong>💡 Pembahasan:</strong> ${q.explanation}`;
+                    elements.optionsContainer.appendChild(exp);
+                }
+
+            } else {
+                const e = essays[currentQuestion];
+                elements.qNumber.innerText = `Essay ${e.no}`;
+                elements.qCategory.innerText = "Soal Uraian";
+                elements.qText.innerHTML = e.text;
+                elements.hintText.innerText = e.hint;
+                
+                elements.optionsContainer.innerHTML = '';
+                const textarea = document.createElement('textarea');
+                textarea.className = "w-full h-40 p-4 rounded-xl border-2 border-gray-200 focus:border-[#7a9e7e] outline-none resize-none transition-colors";
+                textarea.placeholder = forceCheckView ? "Terkunci untuk evaluasi..." : "Ketik jawaban Anda di sini...";
+                textarea.value = answersEssay[currentQuestion];
+                textarea.disabled = forceCheckView;
+                if(forceCheckView) textarea.classList.add('bg-gray-50', 'text-gray-500');
+                textarea.oninput = (ev) => { answersEssay[currentQuestion] = ev.target.value; updateProgress(); };
+                elements.optionsContainer.appendChild(textarea);
+
+                if (forceCheckView) {
+                    const key = document.createElement('div');
+                    key.className = "mt-4 p-4 bg-[#f0f7f1] border border-[#a8c5ac] rounded-xl text-sm md:text-base text-[#2d5231] whitespace-pre-line fade-in";
+                    key.innerHTML = `<strong>Kunci Jawaban Referensi:</strong>\n${e.answerKey}`;
+                    elements.optionsContainer.appendChild(key);
+                }
+            }
+
+            // Action Buttons Logic
+            if(forceCheckView && !isSubmitted) {
+                elements.actionBtns.classList.add('hidden'); // Hide if already checked (unless submitted mode where it's hidden entirely)
+            } else if (!isSubmitted) {
+                elements.actionBtns.classList.remove('hidden');
+                // Disable Check Button if answer is empty
+                const isAnsEmpty = isEssayMode ? (answersEssay[currentQuestion].trim() === "") : (answersPG[currentQuestion] === null);
+                elements.btnCheck.disabled = isAnsEmpty;
+                elements.btnCheck.className = isAnsEmpty ? 
+                    "flex-1 md:flex-none justify-center px-4 py-2.5 bg-gray-100 text-gray-400 border border-gray-200 rounded-xl font-bold text-sm cursor-not-allowed flex items-center gap-2 transition-colors" :
+                    "flex-1 md:flex-none justify-center px-4 py-2.5 bg-[#e8f5ea] text-[#4f7a54] border border-[#a8c5ac] hover:bg-[#d4f0d8] rounded-xl font-bold text-sm transition-colors flex items-center gap-2 cursor-pointer shadow-sm";
+            }
+
+            if(isSubmitted) elements.actionBtns.classList.add('hidden');
+
+            // Nav Grid Updating
+            document.querySelectorAll('.nav-btn').forEach(b => {
+                b.classList.remove('active');
+                if(!isSubmitted) {
+                    const isPg = b.classList.contains('pg-nav-0') ? true : b.className.includes('pg-nav');
+                    const idx = parseInt(b.innerText) - 1;
+                    if (isPg && answersPG[idx] !== null) b.classList.add('answered');
+                    if (!isPg && answersEssay[idx-40].trim() !== "") b.classList.add('answered');
+                    
+                    // Specific border color if already "checked" manually
+                    if(isPg && checkedPG[idx]) b.style.borderColor = answersPG[idx] === questions[idx].answer ? '#48bb78' : '#f56565';
+                } else {
+                    const isPg = b.className.includes('pg-nav');
+                    const idx = parseInt(b.innerText) - 1;
+                    b.classList.remove('answered');
+                    if(isPg) {
+                        if (answersPG[idx] === questions[idx].answer) {
+                            b.style.backgroundColor = '#48bb78'; b.style.color = 'white'; b.style.borderColor = '#48bb78';
+                        } else {
+                            b.style.backgroundColor = '#f56565'; b.style.color = 'white'; b.style.borderColor = '#f56565';
+                        }
+                    } else {
+                        b.style.backgroundColor = '#7a9e7e'; b.style.color = 'white';
+                    }
+                }
+            });
+
+            // Active State
+            const activeClass = isEssayMode ? `.essay-nav-${currentQuestion}` : `.pg-nav-${currentQuestion}`;
+            const activeBtn = document.querySelector(activeClass);
+            if(activeBtn) {
+                activeBtn.classList.add('active');
+                if(isSubmitted || isQChecked) activeBtn.style.border = "2px solid #2d3436";
+                else activeBtn.style.border = "";
+            }
+
+            // Prev/Next Logic
+            elements.btnPrev.disabled = (!isEssayMode && currentQuestion === 0);
+            if (isEssayMode && currentQuestion === 4) elements.btnNext.classList.add('hidden');
+            else {
+                elements.btnNext.classList.remove('hidden');
+                if (!isEssayMode && currentQuestion === 39) elements.btnNext.innerHTML = `<span class="hidden xs:inline">Ke Essay</span> &rarr;`;
+                else elements.btnNext.innerHTML = `<span class="hidden xs:inline">Selanjutnya</span> &rarr;`;
+            }
+
+            updateProgress();
+        }
+
+        function updateProgress() {
+            let filled = answersPG.filter(x => x !== null).length + answersEssay.filter(x => x.trim() !== "").length;
+            elements.progressText.forEach(el => el.innerText = `${filled}/45 Dijawab`);
+            if(filled > 0 && !isSubmitted) elements.btnSubmit.classList.remove('hidden');
+        }
+
+        function jumpToQuestion(idx, isEssay) {
+            currentQuestion = idx; isEssayMode = isEssay;
+            updateUI();
+            if(window.innerWidth < 1024) closeMobileNav(); // Auto-close drawer on mobile
+        }
+
+        function calculateScore() {
+            let correct = 0;
+            for(let i=0; i<40; i++) if(answersPG[i] === questions[i].answer) correct++;
+            return Math.round((correct / 40) * 100);
+        }
+
+        // Mobile Drawer Logic
+        function openMobileNav() {
+            mobileNavOverlay.classList.remove('hidden');
+            setTimeout(() => sidebarPanel.classList.remove('translate-x-full'), 10);
+        }
+        function closeMobileNav() {
+            sidebarPanel.classList.add('translate-x-full');
+            setTimeout(() => mobileNavOverlay.classList.add('hidden'), 300);
+        }
+        document.getElementById('btn-toggle-nav').onclick = openMobileNav;
+        document.getElementById('btn-close-nav').onclick = closeMobileNav;
+        mobileNavOverlay.onclick = (e) => { if(e.target === mobileNavOverlay) closeMobileNav(); };
+
+        // Helper Buttons Handlers
+        elements.btnHint.onclick = () => {
+            elements.hintBox.classList.toggle('hidden');
+        };
+        elements.btnCheck.onclick = () => {
+            if(isEssayMode && answersEssay[currentQuestion].trim() !== "") {
+                checkedEssay[currentQuestion] = true; updateUI();
+            } else if (!isEssayMode && answersPG[currentQuestion] !== null) {
+                checkedPG[currentQuestion] = true; updateUI();
+            }
+        };
+
+        // Main Navigation Handlers
+        document.getElementById('btn-start').onclick = () => {
+            screens.welcome.classList.add('hidden');
+            screens.quiz.classList.remove('hidden'); screens.quiz.classList.add('flex');
+            updateUI();
+        };
+
+        elements.btnNext.onclick = () => {
+            if (!isEssayMode) {
+                if (currentQuestion < 39) currentQuestion++; else { isEssayMode = true; currentQuestion = 0; }
+            } else { if (currentQuestion < 4) currentQuestion++; }
+            updateUI();
+        };
+
+        elements.btnPrev.onclick = () => {
+            if (isEssayMode) {
+                if (currentQuestion > 0) currentQuestion--; else { isEssayMode = false; currentQuestion = 39; }
+            } else { if (currentQuestion > 0) currentQuestion--; }
+            updateUI();
+        };
+
+        elements.btnSubmit.onclick = () => {
+            if(confirm("Yakin ingin mengumpulkan seluruh evaluasi? Kuis akan selesai.")) {
+                isSubmitted = true;
+                document.getElementById('score-display').innerText = calculateScore();
+                screens.quiz.classList.add('hidden'); screens.quiz.classList.remove('flex');
+                screens.result.classList.remove('hidden'); screens.result.classList.add('flex');
+                elements.btnSubmit.classList.add('hidden');
+                closeMobileNav(); updateUI();
+            }
+        };
+
+        document.getElementById('btn-review').onclick = () => {
+            screens.result.classList.add('hidden'); screens.result.classList.remove('flex');
+            screens.quiz.classList.remove('hidden'); screens.quiz.classList.add('flex');
+            jumpToQuestion(0, false);
+        };
+
+        document.getElementById('btn-retry').onclick = () => {
+            if(confirm("Semua jawaban akan dihapus. Mulai ulang?")) {
+                isSubmitted = false;
+                answersPG.fill(null); answersEssay.fill("");
+                checkedPG.fill(false); checkedEssay.fill(false);
+                document.querySelectorAll('.nav-btn').forEach(b => { b.style.cssText = ''; b.className = b.className.replace(/answered/g,''); });
+                jumpToQuestion(0, false);
+                screens.result.classList.add('hidden'); screens.result.classList.remove('flex');
+                screens.quiz.classList.remove('hidden'); screens.quiz.classList.add('flex');
+            }
+        };
+
+        initNavigation();
+
+    </script>
+</body>
+</html>
